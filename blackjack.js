@@ -279,9 +279,15 @@ async function hit()
 {
     if (!canHit) return;
     dealToPlayer(activeHandIdx);
-    if (getPlayerHand(activeHandIdx) > 21)
+    const total = getPlayerHand(activeHandIdx);
+    if (total > 21)
     {
         markHandBust(activeHandIdx);
+        await wait(animationDelay);
+        await finishHand();
+    }
+    else if (total === 21)
+    {
         await wait(animationDelay);
         await finishHand();
     }
