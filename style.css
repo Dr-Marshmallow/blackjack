@@ -1,64 +1,103 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
 body {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 18px;
+    font-size: 16px;
     text-align: center;
     background-color: rgb(35, 105, 68);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin: 0;
+    padding: 0 10px 8px;
 }
+
+/* ── Header ──────────────────────────────────────────────── */
+
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding: 4px 0;
+}
+
+h1 {
+    color: rgb(185, 0, 0);
+    font-size: 30px;
+    margin: 0;
+    flex: 1;
+}
+
+#sounds-btn, #hints-btn {
+    width: 44px;
+    height: 44px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+#sounds-btn { font-size: 26px; }
+#hints-btn  { font-size: 22px; }
+
+#sounds-btn:hover, #hints-btn:hover { opacity: 0.7; }
+
+/* ── HUD ─────────────────────────────────────────────────── */
+
+#hud {
+    color: white;
+    font-size: 17px;
+    font-weight: bold;
+    margin: 2px 0;
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-shrink: 0;
+}
+
+/* ── Game status ─────────────────────────────────────────── */
+
+#game-status {
+    color: #ffd700;
+    white-space: pre-line;
+    min-height: 1.4em;
+    font-size: 15px;
+    font-weight: bold;
+    margin: 2px 0;
+    flex-shrink: 0;
+}
+
+/* ── Section labels ──────────────────────────────────────── */
+
+.section-label {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin: 4px 0 2px;
+    flex-shrink: 0;
+}
+
+/* ── Cards ───────────────────────────────────────────────── */
 
 #dealer-hand img,
 #player-hand img,
 #player-hand-2 img {
-    width: 100px;
+    width: 72px;
 }
+
+/* ── Hand wraps ──────────────────────────────────────────── */
 
 .hand-wrap {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-}
-
-.hand-score {
-    font-size: 28px;
-    font-weight: bold;
-    color: white;
-    min-height: 36px;
-}
-
-.scores-hidden .hand-score {
-    visibility: hidden;
-}
-
-h1 {
-    color: rgb(185, 0, 0);
-    font-size: 48px;
-    margin-bottom: 0;
-}
-
-#hud {
-    color: white;
-    font-size: 22px;
-    font-weight: bold;
-    margin: 8px 0 4px;
-    display: flex;
-    justify-content: center;
-    gap: 48px;
-}
-
-#game-status {
-    color: #ffd700;
-    white-space: pre-line;
-    min-height: 2em;
-}
-
-/* ── Player hands area (supports split side-by-side) ── */
-
-#player-hands-area {
-    display: flex;
-    gap: 30px;
-    justify-content: center;
-    align-items: flex-start;
-    flex-wrap: wrap;
+    gap: 4px;
 }
 
 .active-hand {
@@ -83,113 +122,99 @@ h1 {
 .hand-result-label {
     display: block;
     font-weight: bold;
-    font-size: 18px;
-    margin-top: 6px;
+    font-size: 14px;
+    margin-top: 2px;
 }
 
 .hand-bust .hand-result-label      { color: #e53935; }
 .hand-blackjack .hand-result-label { color: #ffd700; }
 
-/* ── Action buttons ── */
+/* ── Score ───────────────────────────────────────────────── */
+
+.hand-score {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    min-height: 26px;
+}
+
+.scores-hidden .hand-score { visibility: hidden; }
+
+/* ── Player hands area ───────────────────────────────────── */
+
+#player-hands-area {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    padding-bottom: 4px;
+}
+
+/* ── Controls ────────────────────────────────────────────── */
 
 #play-again-btn {
     width: 110px;
-    height: 50px;
-    font-size: 18px;
+    height: 42px;
+    font-size: 15px;
     background-color: chocolate;
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
-#play-again-btn:hover {
-    opacity: 0.7;
-}
+#play-again-btn:hover { opacity: 0.7; }
 
 #action-buttons {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     justify-content: center;
-    margin: 4px 0;
+    flex-shrink: 0;
 }
 
 #action-buttons button {
-    width: 90px;
-    height: 50px;
-    font-size: 16px;
+    width: 82px;
+    height: 42px;
+    font-size: 15px;
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
 }
 
-#action-buttons button:hover {
-    opacity: 0.7;
-}
+#action-buttons button:hover { opacity: 0.7; }
 
 #hit-btn, #stay-btn { background-color: chocolate; }
 #double-btn         { background-color: #2e7d32; }
 #split-btn          { background-color: #1565c0; }
 
-/* ── Sounds button ── */
-
-#sounds-btn {
-    width: 100px;
-    height: 50px;
-    background-color: rgb(35, 105, 68);
-    font-size: 48px;
-    border: none;
-    cursor: pointer;
-    position: absolute;
-    top: 20px;
-    left: 20px;
-}
-
-#sounds-btn:hover {
-    opacity: 0.7;
-}
-
-#hints-btn {
-    width: 50px;
-    height: 50px;
-    background-color: rgb(35, 105, 68);
-    font-size: 30px;
-    border: none;
-    cursor: pointer;
-    position: absolute;
-    top: 20px;
-    right: 20px;
-}
-
-#hints-btn:hover {
-    opacity: 0.7;
-}
-
-/* ── Betting area ── */
+/* ── Betting area ────────────────────────────────────────── */
 
 #betting-area {
     display: none;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
-    margin: 10px 0;
+    gap: 10px;
+    flex-shrink: 0;
 }
 
 #chip-buttons {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
     justify-content: center;
 }
 
 .chip-btn {
-    width: 62px;
-    height: 62px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     border: 4px dashed rgba(255, 255, 255, 0.55);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: bold;
     color: white;
     cursor: pointer;
@@ -197,15 +222,8 @@ h1 {
     outline: none;
 }
 
-.chip-btn:hover:not(:disabled) {
-    transform: scale(1.12);
-}
-
-.chip-btn:disabled {
-    opacity: 0.25;
-    cursor: default;
-    transform: none;
-}
+.chip-btn:hover:not(:disabled) { transform: scale(1.1); }
+.chip-btn:disabled { opacity: 0.25; cursor: default; transform: none; }
 
 .chip-btn[data-amount="5"]   { background-color: #bdbdbd; color: #222; }
 .chip-btn[data-amount="25"]  { background-color: #2e7d32; }
@@ -215,37 +233,21 @@ h1 {
 
 #betting-controls {
     display: flex;
-    gap: 12px;
+    gap: 10px;
 }
 
-#clear-bet-btn,
-#deal-btn {
-    width: 100px;
-    height: 50px;
-    font-size: 18px;
+#clear-bet-btn, #deal-btn {
+    width: 90px;
+    height: 42px;
+    font-size: 15px;
     border: none;
     border-radius: 6px;
     color: white;
     cursor: pointer;
 }
 
-#clear-bet-btn {
-    background-color: #555;
-}
-
-#clear-bet-btn:hover {
-    opacity: 0.7;
-}
-
-#deal-btn {
-    background-color: #c62828;
-}
-
-#deal-btn:hover:not(:disabled) {
-    opacity: 0.7;
-}
-
-#deal-btn:disabled {
-    opacity: 0.35;
-    cursor: default;
-}
+#clear-bet-btn              { background-color: #555; }
+#clear-bet-btn:hover        { opacity: 0.7; }
+#deal-btn                   { background-color: #c62828; }
+#deal-btn:hover:not(:disabled) { opacity: 0.7; }
+#deal-btn:disabled          { opacity: 0.35; cursor: default; }

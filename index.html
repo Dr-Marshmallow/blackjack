@@ -8,21 +8,26 @@
     <script src="blackjack.js"></script>
 </head>
 <body>
-    <h1>Blackjack</h1>
+    <header>
+        <button id="sounds-btn">&#128226;</button>
+        <h1>Blackjack</h1>
+        <button id="hints-btn">&#128065;</button>
+    </header>
 
     <div id="hud">
         <span id="chips-display">Chips: 1000</span>
         <span id="bet-display">Bet: 0</span>
     </div>
 
-    <h2 id="game-status"></h2>
-    <h2>Dealer:</h2>
+    <p id="game-status"></p>
+
+    <p class="section-label">Dealer</p>
     <div class="hand-wrap">
         <div id="dealer-hand"></div>
         <div id="dealer-score" class="hand-score"></div>
     </div>
 
-    <h2>You:</h2>
+    <p class="section-label">You</p>
     <div id="player-hands-area">
         <div class="hand-wrap">
             <div id="player-hand"></div>
@@ -33,8 +38,6 @@
             <div id="player-score-2" class="hand-score"></div>
         </div>
     </div>
-
-    <br>
 
     <div id="betting-area">
         <div id="chip-buttons">
@@ -57,8 +60,5 @@
         <button id="double-btn">Double</button>
         <button id="split-btn">Split</button>
     </div>
-
-    <button id="hints-btn">&#128065;</button>
-    <button id="sounds-btn">&#128226</button>
 </body>
 </html>
