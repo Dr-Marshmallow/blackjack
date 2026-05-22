@@ -9,20 +9,56 @@
 </head>
 <body>
     <h1>Blackjack</h1>
+
+    <div id="hud">
+        <span id="chips-display">Chips: 1000</span>
+        <span id="bet-display">Bet: 0</span>
+    </div>
+
     <h2 id="game-status"></h2>
     <h2>Dealer:</h2>
-    <div id="dealer-hand"></div>
-    
+    <div class="hand-wrap">
+        <div id="dealer-hand"></div>
+        <div id="dealer-score" class="hand-score"></div>
+    </div>
+
     <h2>You:</h2>
-    <div id="player-hand"></div>
+    <div id="player-hands-area">
+        <div class="hand-wrap">
+            <div id="player-hand"></div>
+            <div id="player-score" class="hand-score"></div>
+        </div>
+        <div class="hand-wrap" id="hand-wrap-2" style="display:none">
+            <div id="player-hand-2"></div>
+            <div id="player-score-2" class="hand-score"></div>
+        </div>
+    </div>
 
     <br>
+
+    <div id="betting-area">
+        <div id="chip-buttons">
+            <button class="chip-btn" data-amount="5">5</button>
+            <button class="chip-btn" data-amount="25">25</button>
+            <button class="chip-btn" data-amount="50">50</button>
+            <button class="chip-btn" data-amount="100">100</button>
+            <button class="chip-btn" data-amount="500">500</button>
+        </div>
+        <div id="betting-controls">
+            <button id="clear-bet-btn">Clear</button>
+            <button id="deal-btn">Deal</button>
+        </div>
+    </div>
 
     <button id="play-again-btn">Play again</button>
-    <br>
-    <button id="hit-btn">Hit</button>
-    <button id="stay-btn">Stay</button>
-    
+    <div id="action-buttons">
+        <button id="hit-btn">Hit</button>
+        <button id="stay-btn">Stay</button>
+        <button id="double-btn">Double</button>
+        <button id="split-btn">Split</button>
+    </div>
+
+    <button id="hints-btn">&#128065;</button>
     <button id="sounds-btn">&#128226</button>
 </body>
 </html>
