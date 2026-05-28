@@ -63,8 +63,13 @@ http.createServer((req, res) => {
     const filePath = path.join(__dirname, pathname === "/" ? "index.html" : pathname);
     fs.readFile(filePath, (err, data) => {
         if (err) { res.writeHead(404); res.end("Not found"); return; }
-        const ext = path.extname(filePath);
-        res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
+        const ext     = path.extname(filePath);
+        const headers = { "Content-Type": MIME[ext] || "application/octet-stream" };
+        // Prevent caching of HTML/JS/CSS so updates are always picked up
+        if (ext === ".html" || ext === ".js" || ext === ".css") {
+            headers["Cache-Control"] = "no-cache, must-revalidate";
+        }
+        res.writeHead(200, headers);
         res.end(data);
     });
 
