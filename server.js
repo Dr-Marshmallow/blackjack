@@ -4,7 +4,7 @@ const path = require("path");
 const url  = require("url");
 
 const PORT        = 3000;
-const SCORES_FILE = path.join(__dirname, "public", "scores.json");
+const SCORES_FILE = process.env.SCORES_PATH || path.join(__dirname, "data", "scores.json");
 
 const MIME = {
     ".html": "text/html",
@@ -18,7 +18,6 @@ const MIME = {
     ".ico":  "image/x-icon",
 };
 
-// Ensure public/scores.json exists
 try {
     fs.mkdirSync(path.dirname(SCORES_FILE), { recursive: true });
     if (!fs.existsSync(SCORES_FILE)) {
@@ -33,6 +32,21 @@ try {
 
 http.createServer((req, res) => {
     const pathname = url.parse(req.url).pathname;
+
+    // GET /api/scores — return top 10
+    if (req.method === "GET" && pathname === "/api/scores") {
+        try {
+            const raw    = fs.readFileSync(SCORES_FILE, "utf8").trim() || "[]";
+            const scores = JSON.parse(raw);
+            res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-cache, must-revalidate" });
+            res.end(JSON.stringify(scores));
+        } catch (e) {
+            console.error("GET /api/scores error:", e);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: e.message }));
+        }
+        return;
+    }
 
     // POST /api/scores — append new score, keep top 10
     if (req.method === "POST" && pathname === "/api/scores") {
@@ -65,8 +79,7 @@ http.createServer((req, res) => {
         if (err) { res.writeHead(404); res.end("Not found"); return; }
         const ext     = path.extname(filePath);
         const headers = { "Content-Type": MIME[ext] || "application/octet-stream" };
-        // Prevent caching of HTML/JS/CSS so updates are always picked up
-        if (ext === ".html" || ext === ".js" || ext === ".css" || ext === ".json") {
+        if (ext === ".html" || ext === ".js" || ext === ".css") {
             headers["Cache-Control"] = "no-cache, must-revalidate";
         }
         res.writeHead(200, headers);

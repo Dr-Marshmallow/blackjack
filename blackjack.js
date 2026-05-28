@@ -731,7 +731,7 @@ async function loadScores()
 {
     try
     {
-        const res = await fetch("/public/scores.json");
+        const res = await fetch("/api/scores");
         if (!res.ok) throw new Error();
         return await res.json();
     }

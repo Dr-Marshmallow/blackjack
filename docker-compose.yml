@@ -3,6 +3,8 @@ services:
     build: .
     ports:
       - "3001:3000"
+    environment:
+      - SCORES_PATH=/app/data/scores.json
     restart: unless-stopped
     volumes:
-      - ./public:/app/public
+      - ./data:/app/data
