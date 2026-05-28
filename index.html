@@ -11,11 +11,14 @@
     <header>
         <button id="sounds-btn">&#128226;</button>
         <h1>Blackjack</h1>
+        <button id="rules-btn" title="Regole">&#128218;</button>
+        <button id="leaderboard-btn" title="Classifica">&#127942;</button>
         <button id="hints-btn">&#128065;</button>
     </header>
 
     <div id="hud">
-        <span id="chips-display">Chips: 1000</span>
+        <span id="chips-display">Fishes: 1500</span>
+        <span id="points-display">Points: 0</span>
         <span id="bet-display">Bet: 0</span>
     </div>
 
@@ -59,6 +62,57 @@
         <button id="stay-btn">Stay</button>
         <button id="double-btn">Double</button>
         <button id="split-btn">Split</button>
+    </div>
+
+    <!-- Rules modal -->
+    <div id="rules-modal" class="modal-overlay" style="display:none">
+        <div class="modal-box">
+            <button id="rules-close-btn" class="modal-close">&#10005;</button>
+            <h2>Come funziona il punteggio</h2>
+            <p>Inizi con <strong>0 punti</strong> e <strong>1500 fishes</strong>. La partita finisce quando esaurisci le fishes. Il punteggio finale &egrave; la somma dei punti di tutte le mani.</p>
+            <p>Perdendo una mano non guadagni punti: perdi solo le fishes puntate.</p>
+            <h3>Formula</h3>
+            <p class="formula">punti = fishes_bet &times; moltiplicatore</p>
+            <p>Il moltiplicatore parte da <strong>1.0</strong> e cresce con i bonus:</p>
+            <ul>
+                <li><strong>Vittoria:</strong> +1.5</li>
+                <li><strong>Pareggio:</strong> +0 (ricevi punti = fishes puntate)</li>
+                <li><strong>Blackjack</strong> (prime 2 carte, no split): +2.0</li>
+                <li><strong>Dealer scopre figura</strong> (10/J/Q/K): +1.0</li>
+                <li><strong>Dealer scopre asso:</strong> +1.5</li>
+                <li><strong>Hai fatto double:</strong> +1.0</li>
+                <li><strong>Margine:</strong> +(tuo &minus; dealer) &divide; 21; dealer sballa: +0.5</li>
+                <li><strong>Rischio:</strong> +(fishes_bet &divide; fishes che possiedi)</li>
+            </ul>
+            <p><em>Split: ogni mano viene calcolata indipendentemente.</em></p>
+            <h3>Esempio</h3>
+            <p>1000 fishes, bet 300, vinci 20 vs 18, dealer mostra K.<br>
+            Molt. = 1.0 + 1.5 + 1.0 + (20&minus;18)&divide;21 + 300&divide;1000 &asymp; 3.9<br>
+            Punti = 300 &times; 3.9 = <strong>1170</strong></p>
+        </div>
+    </div>
+
+    <!-- Leaderboard modal -->
+    <div id="leaderboard-modal" class="modal-overlay" style="display:none">
+        <div class="modal-box">
+            <button id="leaderboard-close-btn" class="modal-close">&#10005;</button>
+            <h2>&#127942; Classifica</h2>
+            <ol id="leaderboard-list"></ol>
+        </div>
+    </div>
+
+    <!-- Game over modal -->
+    <div id="gameover-modal" class="modal-overlay" style="display:none">
+        <div class="modal-box gameover-box">
+            <button id="gameover-close-btn" class="modal-close">&#10005;</button>
+            <h2>Game Over!</h2>
+            <p>Punteggio finale:</p>
+            <p id="gameover-points" class="gameover-score">0 pts</p>
+            <div class="gameover-input">
+                <input type="text" id="gameover-name" placeholder="Il tuo nome" maxlength="20" autocomplete="off" />
+                <button id="gameover-save-btn">Salva</button>
+            </div>
+        </div>
     </div>
 </body>
 </html>

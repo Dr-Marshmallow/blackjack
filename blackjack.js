@@ -4,24 +4,25 @@
 const debug = true;
 const suits  = ["C", "D", "H", "S"];
 const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"];
-const ACE_VALUE     = 11;
-const STARTING_CHIPS = 1000;
+const ACE_VALUE       = 11;
+const STARTING_FISHES = 1500;
 
-const cardSfx    = new Audio("assets/sfx/new_card.mp3");
+const cardSfx     = new Audio("assets/sfx/new_card.mp3");
 const gameOverSfx = new Audio("assets/sfx/card_game_over.wav");
 
 // ── Deck ──────────────────────────────────────────────────────────────────────
 var deck = [];
 
 // ── Dealer state ──────────────────────────────────────────────────────────────
-var dealerValue    = 0;
-var dealerAceCount = 0;
+var dealerValue      = 0;
+var dealerAceCount   = 0;
 var dealerExtraCards = 0;
-var dealerRevealed = false;
+var dealerRevealed   = false;
 var hiddenCard;
+var dealerFaceUpCard = null;
 
 // ── Player state (array supports split) ───────────────────────────────────────
-// Each hand: { value, aceCount, cards: [], bet }
+// Each hand: { value, aceCount, cards: [], bet, doubled }
 var playerHands   = [];
 var activeHandIdx = 0;
 var hasSplit      = false;
@@ -33,31 +34,47 @@ var canStay = false;
 var sounds  = true;
 var animationDelay = 500;
 
-// ── Chips ─────────────────────────────────────────────────────────────────────
-var chips      = STARTING_CHIPS;
-var currentBet = 0;
+// ── Fishes & Points ───────────────────────────────────────────────────────────
+var fishes         = STARTING_FISHES;
+var currentBet     = 0;
+var totalPoints    = 0;
+var chipsAtBetTime = 0;
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 var hitBtn, stayBtn, doubleBtn, splitBtn;
 var soundsBtn, hintsBtn, playAgainBtn;
 var bettingArea, chipsDisplay, betDisplay, dealBtn, clearBetBtn;
+var pointsDisplay;
+var rulesBtn, rulesModal, rulesCloseBtn;
+var leaderboardBtn, leaderboardModal, leaderboardCloseBtn;
+var gameoverModal, gameoverCloseBtn;
 
 window.onload = function()
 {
     preloadImages();
 
-    hitBtn      = document.getElementById("hit-btn");
-    stayBtn     = document.getElementById("stay-btn");
-    doubleBtn   = document.getElementById("double-btn");
-    splitBtn    = document.getElementById("split-btn");
-    soundsBtn   = document.getElementById("sounds-btn");
-    hintsBtn    = document.getElementById("hints-btn");
-    playAgainBtn = document.getElementById("play-again-btn");
-    bettingArea  = document.getElementById("betting-area");
-    chipsDisplay = document.getElementById("chips-display");
-    betDisplay   = document.getElementById("bet-display");
-    dealBtn      = document.getElementById("deal-btn");
-    clearBetBtn  = document.getElementById("clear-bet-btn");
+    hitBtn        = document.getElementById("hit-btn");
+    stayBtn       = document.getElementById("stay-btn");
+    doubleBtn     = document.getElementById("double-btn");
+    splitBtn      = document.getElementById("split-btn");
+    soundsBtn     = document.getElementById("sounds-btn");
+    hintsBtn      = document.getElementById("hints-btn");
+    playAgainBtn  = document.getElementById("play-again-btn");
+    bettingArea   = document.getElementById("betting-area");
+    chipsDisplay  = document.getElementById("chips-display");
+    betDisplay    = document.getElementById("bet-display");
+    dealBtn       = document.getElementById("deal-btn");
+    clearBetBtn   = document.getElementById("clear-bet-btn");
+    pointsDisplay = document.getElementById("points-display");
+
+    rulesBtn         = document.getElementById("rules-btn");
+    rulesModal       = document.getElementById("rules-modal");
+    rulesCloseBtn    = document.getElementById("rules-close-btn");
+    leaderboardBtn   = document.getElementById("leaderboard-btn");
+    leaderboardModal = document.getElementById("leaderboard-modal");
+    leaderboardCloseBtn = document.getElementById("leaderboard-close-btn");
+    gameoverModal    = document.getElementById("gameover-modal");
+    gameoverCloseBtn = document.getElementById("gameover-close-btn");
 
     hitBtn.addEventListener("click", hit);
     stayBtn.addEventListener("click", stay);
@@ -68,6 +85,17 @@ window.onload = function()
     playAgainBtn.addEventListener("click", playAgain);
     dealBtn.addEventListener("click", dealCards);
     clearBetBtn.addEventListener("click", clearBet);
+
+    rulesBtn.addEventListener("click", () => rulesModal.style.display = "flex");
+    rulesCloseBtn.addEventListener("click", () => rulesModal.style.display = "none");
+    rulesModal.addEventListener("click", e => { if (e.target === rulesModal) rulesModal.style.display = "none"; });
+
+    leaderboardBtn.addEventListener("click", () => { renderLeaderboard(); leaderboardModal.style.display = "flex"; });
+    leaderboardCloseBtn.addEventListener("click", () => leaderboardModal.style.display = "none");
+    leaderboardModal.addEventListener("click", e => { if (e.target === leaderboardModal) leaderboardModal.style.display = "none"; });
+
+    gameoverCloseBtn.addEventListener("click", () => gameoverModal.style.display = "none");
+    gameoverModal.addEventListener("click", e => { if (e.target === gameoverModal) gameoverModal.style.display = "none"; });
 
     document.querySelectorAll(".chip-btn").forEach(btn =>
         btn.addEventListener("click", () => placeBet(parseInt(btn.dataset.amount)))
@@ -91,7 +119,7 @@ function startBettingPhase()
 
 function placeBet(amount)
 {
-    if (currentBet + amount > chips) return;
+    if (currentBet + amount > fishes) return;
     currentBet += amount;
     updateHUD();
     updateChipButtonStates();
@@ -107,7 +135,8 @@ function clearBet()
 function dealCards()
 {
     if (currentBet === 0) return;
-    chips -= currentBet;           // upfront deduction
+    chipsAtBetTime = fishes;        // capture BEFORE deduction (used in risk bonus)
+    fishes -= currentBet;
     updateHUD();
     bettingArea.style.display = "none";
     startGame();
@@ -115,14 +144,15 @@ function dealCards()
 
 function updateHUD()
 {
-    chipsDisplay.textContent = "Chips: " + chips;
-    betDisplay.textContent   = "Bet: "   + currentBet;
+    chipsDisplay.textContent  = "Fishes: " + fishes;
+    betDisplay.textContent    = "Bet: "    + currentBet;
+    pointsDisplay.textContent = "Points: " + totalPoints;
 }
 
 function updateChipButtonStates()
 {
     document.querySelectorAll(".chip-btn").forEach(btn => {
-        btn.disabled = (currentBet + parseInt(btn.dataset.amount) > chips);
+        btn.disabled = (currentBet + parseInt(btn.dataset.amount) > fishes);
     });
     dealBtn.disabled = (currentBet === 0);
 }
@@ -139,10 +169,11 @@ async function startGame()
     dealerAceCount   = 0;
     dealerExtraCards = 0;
     dealerRevealed   = false;
+    dealerFaceUpCard = null;
     hasSplit         = false;
     splitAces        = false;
     activeHandIdx    = 0;
-    playerHands      = [{ value: 0, aceCount: 0, cards: [], bet: currentBet }];
+    playerHands      = [{ value: 0, aceCount: 0, cards: [], bet: currentBet, doubled: false }];
 
     document.getElementById("hand-wrap-2").style.display = "none";
     ["player-hand", "player-hand-2"].forEach(id => {
@@ -196,6 +227,7 @@ function dealToDealer()
 {
     const card  = deck.pop();
     const value = getCardValue(card);
+    if (dealerFaceUpCard === null) dealerFaceUpCard = card;   // first call = face-up card
     dealerValue += value;
     if (value === ACE_VALUE) dealerAceCount++;
     log("dealer: " + card);
@@ -307,10 +339,11 @@ async function doubleDown()
 {
     if (!canHit || !canStay) return;
     const h = playerHands[activeHandIdx];
-    if (chips < h.bet) return;
+    if (fishes < h.bet) return;
 
-    chips -= h.bet;    // deduct extra amount upfront
-    h.bet *= 2;
+    fishes -= h.bet;
+    h.bet     *= 2;
+    h.doubled  = true;
     updateHUD();
 
     canHit  = false;
@@ -327,32 +360,30 @@ async function split()
 {
     if (!canHit || !canStay || hasSplit) return;
     const h = playerHands[0];
-    if (h.cards.length !== 2 || chips < currentBet || !isSplittable(h)) return;
+    if (h.cards.length !== 2 || fishes < currentBet || !isSplittable(h)) return;
 
-    // Move second card to new hand
     const splitCard  = h.cards.pop();
     const splitValue = getCardValue(splitCard);
     h.value -= splitValue;
     if (splitValue === ACE_VALUE) h.aceCount--;
 
-    chips -= currentBet;    // upfront deduction for second hand
+    fishes -= currentBet;
     updateHUD();
 
     playerHands.push({
         value:    splitValue,
         aceCount: splitValue === ACE_VALUE ? 1 : 0,
         cards:    [splitCard],
-        bet:      currentBet
+        bet:      currentBet,
+        doubled:  false
     });
     hasSplit = true;
 
-    // Move card DOM node from hand-1 to hand-2
     const hand1El = document.getElementById("player-hand");
     const hand2El = document.getElementById("player-hand-2");
     document.getElementById("hand-wrap-2").style.display = "flex";
     hand2El.appendChild(hand1El.lastElementChild);
 
-    // Disable during dealing animation
     canHit  = false;
     canStay = false;
     updateActionButtons();
@@ -368,7 +399,6 @@ async function split()
 
     if (splitValue === ACE_VALUE)
     {
-        // Split aces: one card each, no more actions
         splitAces = true;
         await wait(animationDelay);
         await finishHand();
@@ -414,7 +444,6 @@ async function finishHand()
 
 async function dealerPlay()
 {
-    // Reveal hidden card first, then decide whether to hit
     revealCard();
     await wait(animationDelay);
 
@@ -427,6 +456,36 @@ async function dealerPlay()
 
     await wait(animationDelay * 0.25);
     checkWinner();
+}
+
+// ── Points calculation ────────────────────────────────────────────────────────
+
+function calcPoints(outcome, bet, playerScore, dealerScore, handObj)
+{
+    if (outcome === "dealer") return 0;
+
+    var m = 1.0;
+    if (outcome === "player" || outcome === "blackjack") m += 1.5;
+    if (outcome === "blackjack") m += 2.0;
+
+    var rank = dealerFaceUpCard ? dealerFaceUpCard.split("-")[0] : null;
+    if (rank === "T" || rank === "J" || rank === "Q" || rank === "K") m += 1.0;
+    else if (rank === "A") m += 1.5;
+
+    if (handObj.doubled) m += 1.0;
+
+    if (dealerScore > 21)
+    {
+        m += 0.5;
+    }
+    else if (outcome !== "draw")
+    {
+        m += (playerScore - dealerScore) / 21;
+    }
+
+    if (chipsAtBetTime > 0) m += bet / chipsAtBetTime;
+
+    return Math.round(bet * m);
 }
 
 // ── Winner determination ──────────────────────────────────────────────────────
@@ -480,19 +539,25 @@ function checkWinner()
             outcome = "dealer";    msg = label + "Dealer wins";
         }
 
-        const delta = applyBetOutcome(outcome, ph.bet);
-        totalDelta += delta;
+        const fishDelta = applyBetOutcome(outcome, ph.bet);
+        totalDelta += fishDelta;
 
-        if (delta > 0)      msg += " (+" + delta + ")";
-        else if (delta < 0) msg += " (" + delta + ")";
-        else                msg += " (push)";
+        const pts = calcPoints(outcome, ph.bet, player, dealer, ph);
+        totalPoints += pts;
+
+        if (fishDelta > 0)      msg += " (+" + fishDelta + " fishes";
+        else if (fishDelta < 0) msg += " (" + fishDelta + " fishes";
+        else                    msg += " (push";
+
+        if (pts > 0) msg += ", +" + pts + " pts)";
+        else         msg += ")";
 
         messages.push(msg);
     });
 
     let statusText = messages.join("\n");
     if (playerHands.length > 1)
-        statusText += "\nNet: " + (totalDelta >= 0 ? "+" : "") + totalDelta;
+        statusText += "\nNet: " + (totalDelta >= 0 ? "+" : "") + totalDelta + " fishes";
 
     document.getElementById("game-status").innerText = statusText;
     updateHUD();
@@ -500,26 +565,26 @@ function checkWinner()
     endGame();
 }
 
-// Chips are already deducted upfront; here we return winnings only.
+// Fishes are already deducted upfront; here we return winnings only.
 function applyBetOutcome(outcome, bet)
 {
     if (outcome === "player")
     {
-        chips += bet * 2;                          // return bet + profit
-        return bet;                                // display delta = profit
+        fishes += bet * 2;
+        return bet;
     }
     if (outcome === "blackjack")
     {
         const profit = Math.floor(bet * 1.5);
-        chips += bet + profit;
+        fishes += bet + profit;
         return profit;
     }
     if (outcome === "dealer")
     {
-        return -bet;                               // already lost (deducted upfront)
+        return -bet;
     }
     // draw
-    chips += bet;                                  // return original bet
+    fishes += bet;
     return 0;
 }
 
@@ -532,8 +597,8 @@ function updateActionButtons()
 
     hitBtn.style.visibility    = canHit  ? "visible" : "hidden";
     stayBtn.style.visibility   = canStay ? "visible" : "hidden";
-    doubleBtn.style.visibility = (canHit && canStay && firstTwo && chips >= h.bet)                         ? "visible" : "hidden";
-    splitBtn.style.visibility  = (canHit && canStay && !hasSplit && firstTwo && chips >= currentBet && isSplittable(h)) ? "visible" : "hidden";
+    doubleBtn.style.visibility = (canHit && canStay && firstTwo && fishes >= h.bet)                           ? "visible" : "hidden";
+    splitBtn.style.visibility  = (canHit && canStay && !hasSplit && firstTwo && fishes >= currentBet && isSplittable(h)) ? "visible" : "hidden";
 }
 
 function markHandBust(idx)
@@ -614,9 +679,20 @@ function endGame()
     [hitBtn, stayBtn, doubleBtn, splitBtn].forEach(b => b.style.visibility = "hidden");
     document.getElementById("player-hand").classList.remove("active-hand");
     document.getElementById("player-hand-2").classList.remove("active-hand");
-    playAgainBtn.textContent      = chips <= 0 ? "New Game" : "Play again";
-    playAgainBtn.style.visibility = "visible";
-    playAgainBtn.focus();
+
+    if (fishes <= 0)
+    {
+        playAgainBtn.textContent      = "New Game";
+        playAgainBtn.style.visibility = "visible";
+        playAgainBtn.focus();
+        showGameOverModal();
+    }
+    else
+    {
+        playAgainBtn.textContent      = "Play again";
+        playAgainBtn.style.visibility = "visible";
+        playAgainBtn.focus();
+    }
 }
 
 function clearHands()
@@ -632,10 +708,90 @@ function clearHands()
 
 function playAgain()
 {
-    if (chips <= 0) chips = STARTING_CHIPS;
+    if (fishes <= 0)
+    {
+        fishes      = STARTING_FISHES;
+        totalPoints = 0;
+    }
     document.getElementById("game-status").innerText = "";
     clearHands();
     startBettingPhase();
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+
+function loadScores()
+{
+    return JSON.parse(localStorage.getItem("bj_scores") || "[]");
+}
+
+function saveScore(name, pts)
+{
+    const scores = loadScores();
+    scores.push({ name: name || "Anonimo", pts, date: new Date().toLocaleDateString("it-IT") });
+    scores.sort((a, b) => b.pts - a.pts);
+    localStorage.setItem("bj_scores", JSON.stringify(scores.slice(0, 10)));
+}
+
+function renderLeaderboard()
+{
+    const list   = document.getElementById("leaderboard-list");
+    const scores = loadScores();
+    list.innerHTML = "";
+
+    if (scores.length === 0)
+    {
+        const li = document.createElement("li");
+        li.className   = "lb-empty";
+        li.textContent = "Nessun punteggio ancora.";
+        list.appendChild(li);
+        return;
+    }
+
+    scores.forEach((s, i) => {
+        const li    = document.createElement("li");
+        const medal = i === 0 ? "🥇 " : i === 1 ? "🥈 " : i === 2 ? "🥉 " : (i + 1) + ". ";
+        li.innerHTML =
+            "<span class='lb-rank'>"  + medal           + "</span>" +
+            "<span class='lb-name'>"  + escHtml(s.name) + "</span>" +
+            "<span class='lb-pts'>"   + s.pts + " pts"  + "</span>" +
+            "<span class='lb-date'>"  + s.date          + "</span>";
+        list.appendChild(li);
+    });
+}
+
+function showGameOverModal()
+{
+    const totalEl   = document.getElementById("gameover-points");
+    const nameInput = document.getElementById("gameover-name");
+    const saveBtn   = document.getElementById("gameover-save-btn");
+
+    totalEl.textContent = totalPoints + " pts";
+    nameInput.value     = "";
+    gameoverModal.style.display = "flex";
+    nameInput.focus();
+
+    const doSave = function() {
+        const name = nameInput.value.trim();
+        saveScore(name, totalPoints);
+        gameoverModal.style.display = "none";
+        renderLeaderboard();
+        leaderboardModal.style.display = "flex";
+    };
+
+    saveBtn.onclick = doSave;
+
+    nameInput.onkeydown = function(e) {
+        if (e.key === "Enter") doSave();
+    };
+}
+
+function escHtml(str)
+{
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 }
 
 // ── Card helpers ──────────────────────────────────────────────────────────────
@@ -643,8 +799,8 @@ function playAgain()
 function getCardValue(card)
 {
     const rank = card.split("-")[0];
-    if (rank === "A")       return ACE_VALUE;
-    if (isNaN(rank))        return 10;
+    if (rank === "A")  return ACE_VALUE;
+    if (isNaN(rank))   return 10;
     return parseInt(rank);
 }
 
