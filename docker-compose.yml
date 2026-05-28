@@ -2,5 +2,7 @@ services:
   blackjack:
     build: .
     ports:
-      - "3001:80"
+      - "3001:3000"
     restart: unless-stopped
+    volumes:
+      - ./public:/app/public

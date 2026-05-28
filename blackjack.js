@@ -720,23 +720,51 @@ function playAgain()
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 
-function loadScores()
+async function loadScores()
 {
-    return JSON.parse(localStorage.getItem("bj_scores") || "[]");
+    try
+    {
+        const res = await fetch("/public/scores.json");
+        if (!res.ok) throw new Error();
+        return await res.json();
+    }
+    catch (e)
+    {
+        // fallback to localStorage when running without the server
+        return JSON.parse(localStorage.getItem("bj_scores") || "[]");
+    }
 }
 
-function saveScore(name, pts)
+async function saveScore(name, pts)
 {
-    const scores = loadScores();
-    scores.push({ name: name || "Anonimo", pts, date: new Date().toLocaleDateString("it-IT") });
-    scores.sort((a, b) => b.pts - a.pts);
-    localStorage.setItem("bj_scores", JSON.stringify(scores.slice(0, 10)));
+    const entry = { name: name || "Anonimo", pts, date: new Date().toLocaleDateString("it-IT") };
+    try
+    {
+        const res = await fetch("/api/scores", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify(entry)
+        });
+        if (!res.ok) throw new Error();
+        return await res.json();
+    }
+    catch (e)
+    {
+        // fallback to localStorage
+        const scores = JSON.parse(localStorage.getItem("bj_scores") || "[]");
+        scores.push(entry);
+        scores.sort((a, b) => b.pts - a.pts);
+        localStorage.setItem("bj_scores", JSON.stringify(scores.slice(0, 10)));
+        return scores.slice(0, 10);
+    }
 }
 
-function renderLeaderboard()
+async function renderLeaderboard()
 {
-    const list   = document.getElementById("leaderboard-list");
-    const scores = loadScores();
+    const list = document.getElementById("leaderboard-list");
+    list.innerHTML = "<li class='lb-empty'>Caricamento...</li>";
+
+    const scores = await loadScores();
     list.innerHTML = "";
 
     if (scores.length === 0)
@@ -771,11 +799,11 @@ function showGameOverModal()
     gameoverModal.style.display = "flex";
     nameInput.focus();
 
-    const doSave = function() {
+    const doSave = async function() {
         const name = nameInput.value.trim();
-        saveScore(name, totalPoints);
+        await saveScore(name, totalPoints);
         gameoverModal.style.display = "none";
-        renderLeaderboard();
+        await renderLeaderboard();
         leaderboardModal.style.display = "flex";
     };
 
