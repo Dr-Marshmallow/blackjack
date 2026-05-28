@@ -19,8 +19,17 @@ const MIME = {
 };
 
 // Ensure public/scores.json exists
-fs.mkdirSync(path.dirname(SCORES_FILE), { recursive: true });
-if (!fs.existsSync(SCORES_FILE)) fs.writeFileSync(SCORES_FILE, "[]");
+try {
+    fs.mkdirSync(path.dirname(SCORES_FILE), { recursive: true });
+    if (!fs.existsSync(SCORES_FILE)) {
+        fs.writeFileSync(SCORES_FILE, "[]");
+        console.log("Created", SCORES_FILE);
+    } else {
+        console.log("Found existing", SCORES_FILE);
+    }
+} catch (e) {
+    console.error("Failed to initialise scores file:", e);
+}
 
 http.createServer((req, res) => {
     const pathname = url.parse(req.url).pathname;
@@ -32,16 +41,19 @@ http.createServer((req, res) => {
         req.on("end", () => {
             try {
                 const entry  = JSON.parse(body);
-                const scores = JSON.parse(fs.readFileSync(SCORES_FILE, "utf8") || "[]");
+                const raw    = fs.readFileSync(SCORES_FILE, "utf8").trim() || "[]";
+                const scores = JSON.parse(raw);
                 scores.push(entry);
                 scores.sort((a, b) => b.pts - a.pts);
                 const top10 = scores.slice(0, 10);
                 fs.writeFileSync(SCORES_FILE, JSON.stringify(top10, null, 2));
+                console.log("Saved score:", entry.name, entry.pts, "→", SCORES_FILE);
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify(top10));
             } catch (e) {
-                res.writeHead(400, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: "Invalid JSON" }));
+                console.error("POST /api/scores error:", e);
+                res.writeHead(500, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: e.message }));
             }
         });
         return;

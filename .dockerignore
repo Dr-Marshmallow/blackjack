@@ -1,5 +1,9 @@
 .git
 .gitignore
 .gitattributes
+.dockerignore
 .claude/
 CLAUDE.md
+rules.md
+README.md
+public/scores.json
