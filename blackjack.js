@@ -39,6 +39,7 @@ var fishes         = STARTING_FISHES;
 var currentBet     = 0;
 var totalPoints    = 0;
 var chipsAtBetTime = 0;
+var lastSavedName  = null;
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 var hitBtn, stayBtn, doubleBtn, splitBtn;
@@ -710,8 +711,9 @@ function playAgain()
 {
     if (fishes <= 0)
     {
-        fishes      = STARTING_FISHES;
-        totalPoints = 0;
+        fishes        = STARTING_FISHES;
+        totalPoints   = 0;
+        lastSavedName = null;
     }
     document.getElementById("game-status").innerText = "";
     clearHands();
@@ -759,9 +761,10 @@ async function saveScore(name, pts)
     }
 }
 
-async function renderLeaderboard()
+async function renderLeaderboard(highlightName)
 {
-    const list = document.getElementById("leaderboard-list");
+    const youName = highlightName !== undefined ? highlightName : lastSavedName;
+    const list    = document.getElementById("leaderboard-list");
     list.innerHTML = "<li class='lb-empty'>Caricamento...</li>";
 
     const scores = await loadScores();
@@ -778,10 +781,12 @@ async function renderLeaderboard()
 
     scores.forEach((s, i) => {
         const li    = document.createElement("li");
+        const isYou = youName && s.name === youName;
         const medal = i === 0 ? "🥇 " : i === 1 ? "🥈 " : i === 2 ? "🥉 " : (i + 1) + ". ";
+        if (isYou) li.classList.add("lb-you");
         li.innerHTML =
             "<span class='lb-rank'>"  + medal           + "</span>" +
-            "<span class='lb-name'>"  + escHtml(s.name) + "</span>" +
+            "<span class='lb-name'>"  + escHtml(s.name) + (isYou ? " <span class='lb-you-tag'>(Tu)</span>" : "") + "</span>" +
             "<span class='lb-pts'>"   + s.pts + " pts"  + "</span>" +
             "<span class='lb-date'>"  + s.date          + "</span>";
         list.appendChild(li);
@@ -793,17 +798,45 @@ function showGameOverModal()
     const totalEl   = document.getElementById("gameover-points");
     const nameInput = document.getElementById("gameover-name");
     const saveBtn   = document.getElementById("gameover-save-btn");
+    const errorEl   = document.getElementById("gameover-error");
 
     totalEl.textContent = totalPoints + " pts";
     nameInput.value     = "";
+    errorEl.textContent = "";
     gameoverModal.style.display = "flex";
     nameInput.focus();
 
     const doSave = async function() {
-        const name = nameInput.value.trim();
+        const rawName = nameInput.value.trim();
+        errorEl.textContent = "";
+
+        const scores = await loadScores();
+        let name;
+
+        if (!rawName)
+        {
+            // Auto-generate "Sconosciuto N"
+            const nums = scores
+                .map(s => { const m = s.name.match(/^Sconosciuto (\d+)$/); return m ? parseInt(m[1]) : 0; })
+                .filter(n => n > 0);
+            name = "Sconosciuto " + (nums.length > 0 ? Math.max(...nums) + 1 : 1);
+        }
+        else
+        {
+            // Uniqueness check (case-insensitive)
+            if (scores.some(s => s.name.toLowerCase() === rawName.toLowerCase()))
+            {
+                errorEl.textContent = "Nome già in uso, scegline un altro.";
+                nameInput.focus();
+                return;
+            }
+            name = rawName;
+        }
+
         await saveScore(name, totalPoints);
+        lastSavedName = name;
         gameoverModal.style.display = "none";
-        await renderLeaderboard();
+        await renderLeaderboard(name);
         leaderboardModal.style.display = "flex";
     };
 

@@ -413,3 +413,19 @@ h1 {
 }
 
 .gameover-input button:hover { opacity: 0.8; }
+
+.gameover-error {
+    color: #ff6b6b;
+    font-size: 13px;
+    min-height: 18px;
+    margin: 6px 0 0;
+}
+
+.lb-you { background: rgba(255, 215, 0, 0.08); border-radius: 4px; }
+
+.lb-you-tag {
+    color: #ffd700;
+    font-size: 12px;
+    font-style: italic;
+    margin-left: 4px;
+}
