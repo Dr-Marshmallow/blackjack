@@ -66,7 +66,7 @@ http.createServer((req, res) => {
         const ext     = path.extname(filePath);
         const headers = { "Content-Type": MIME[ext] || "application/octet-stream" };
         // Prevent caching of HTML/JS/CSS so updates are always picked up
-        if (ext === ".html" || ext === ".js" || ext === ".css") {
+        if (ext === ".html" || ext === ".js" || ext === ".css" || ext === ".json") {
             headers["Cache-Control"] = "no-cache, must-revalidate";
         }
         res.writeHead(200, headers);
