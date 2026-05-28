@@ -498,6 +498,7 @@ function checkWinner()
 
     const messages = [];
     let   totalDelta = 0;
+    let   totalPtsDelta = 0;
 
     playerHands.forEach((ph, i) =>
     {
@@ -544,7 +545,8 @@ function checkWinner()
         totalDelta += fishDelta;
 
         const pts = calcPoints(outcome, ph.bet, player, dealer, ph);
-        totalPoints += pts;
+        totalPoints    += pts;
+        totalPtsDelta  += pts;
 
         if (fishDelta > 0)      msg += " (+" + fishDelta + " fishes";
         else if (fishDelta < 0) msg += " (" + fishDelta + " fishes";
@@ -558,7 +560,10 @@ function checkWinner()
 
     let statusText = messages.join("\n");
     if (playerHands.length > 1)
+    {
         statusText += "\nNet: " + (totalDelta >= 0 ? "+" : "") + totalDelta + " fishes";
+        if (totalPtsDelta > 0) statusText += ", +" + totalPtsDelta + " pts";
+    }
 
     document.getElementById("game-status").innerText = statusText;
     updateHUD();
